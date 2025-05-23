@@ -122,16 +122,16 @@ Connect to the TurtleBot3 physically, power it on, synchronize time with the PC,
 2. **Turn On the PC:**
    - Log in with:
      - **User:** `ros2`
-     - **Password:** `ros1ecture`
+     - **Password:** `r0s1ecture`
 
 ### Synchronizing Time between PC and TurtleBot3
 
 1. **Switch Connection Mode:**
    - In **Terminal 1**, run:
      ```bash
-     turtlebots_mode
+     turtlebot3_mode
      ```
-   - Enter password: `ros1ecture` (input is hidden).
+   - Enter password: `r0s1ecture` (input is hidden).
 
 2. **Check Synchronization:**
    - In **Terminal 1**, run:
@@ -139,7 +139,7 @@ Connect to the TurtleBot3 physically, power it on, synchronize time with the PC,
      cd ~/ros2_lecture_ws
      ./sync_time.sh
      ```
-   - If synchronization fails, repeat the `turtlebots_mode` command and retry.
+   - If synchronization fails, repeat the `turtlebot3_mode` command and retry.
 
 ### Launching the System
 
@@ -174,6 +174,7 @@ Use SLAM to create an environmental map by launching the SLAM system, controllin
      cd ~/ros2_lecture_ws
      . 0_env.sh
      . /entrypoint.sh
+     source install/setup.bash
      ```
 
 3. **Launch SLAM:**
