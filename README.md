@@ -76,7 +76,7 @@ After engagement and data collection, return to the previous patrol route and co
 1. **Launch the Virtual Environment:**
    - Open **Terminal 1** and run:
      ```bash
-     cd ~/ros2_lecture.ws
+     cd ~/ros2_lecture_ws
      . 0_env.sh
      . /entrypoint.sh
      ```
@@ -93,9 +93,9 @@ After engagement and data collection, return to the previous patrol route and co
 - To view or edit files, such as `README.md`:
   1. Open Visual Studio Code:
      ```bash
-     code ~/ros2_lecture.ws
+     code ~/ros2_lecture_ws
      ```
-  2. Alternatively, use the GUI: Open VS Code, select "Open Folder," and choose `~/ros2_lecture.ws`.
+  2. Alternatively, use the GUI: Open VS Code, select "Open Folder," and choose `~/ros2_lecture_ws`.
   3. In VS Code, navigate to `lecture03_pkg`, click `README.md`, and use the preview icon to view it.
 
 ---
@@ -136,7 +136,7 @@ Connect to the TurtleBot3 physically, power it on, synchronize time with the PC,
 2. **Check Synchronization:**
    - In **Terminal 1**, run:
      ```bash
-     cd ~/ros2_lecture.ws
+     cd ~/ros2_lecture_ws
      ./sync_time.sh
      ```
    - If synchronization fails, repeat the `turtlebots_mode` command and retry.
@@ -171,7 +171,7 @@ Use SLAM to create an environmental map by launching the SLAM system, controllin
 2. **Launch the Virtual Environment:**
    - Open **Terminal 3** and run:
      ```bash
-     cd ~/ros2_lecture.ws
+     cd ~/ros2_lecture_ws
      . 0_env.sh
      . /entrypoint.sh
      ```
@@ -189,7 +189,7 @@ Use SLAM to create an environmental map by launching the SLAM system, controllin
 1. **Launch the Virtual Environment:**
    - Open **Terminal 4** and run:
      ```bash
-     cd ~/ros2_lecture.ws
+     cd ~/ros2_lecture_ws
      . 0_env.sh
      . /entrypoint.sh
      ```
@@ -212,7 +212,7 @@ Use SLAM to create an environmental map by launching the SLAM system, controllin
 1. **Launch the Virtual Environment:**
    - Open **Terminal 5** and run:
      ```bash
-     cd ~/ros2_lecture.ws
+     cd ~/ros2_lecture_ws
      . 0_env.sh
      . /entrypoint.sh
      ```
