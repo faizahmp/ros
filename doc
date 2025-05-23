@@ -1,0 +1,104 @@
+Building the Package
+Launch the Virtual Environment:
+Open Terminal 1 and run the following commands to enter the ROS2 workspace and activate the environment:
+cd ~/ros2_lecture.ws
+. 0_env.sh
+. /entrypoint.sh
+Build the Workspace:
+In Terminal 1, build the workspace with:
+colcon build --symlink-install
+Note: The --symlink-install option is required for Python scripts, allowing modifications without rebuilding each time.
+Opening the Editor (Optional)
+To explore the package or view the README.md file:
+Open Visual Studio Code with:
+code ~/ros2_lecture.ws
+Alternatively, open VS Code via the GUI, select "Open Folder," and choose ~/ros2_lecture.ws.
+In VS Code, navigate to lecture03_pkg, click on README.md, and use the preview icon to view it.
+
+Connecting to TurtleBot3
+This section covers the steps to physically connect to the TurtleBot3, power it on, synchronize time with the PC, and launch the robot's system.
+Hardware Connections
+Connect the Battery:
+Attach the battery terminals to the TurtleBot3.
+Insert the battery into its designated slot on the robot.
+Connect via LAN:
+Use a LAN cable to connect the TurtleBot3 to your PC.
+Turning On the Robot and PC
+Turn On TurtleBot3:
+Switch the power button to ON.
+Wait approximately 3 minutes for startup. The Laser Range Finder (LRF) will begin rotating when ready.
+Turn On the PC:
+Power on the PC and log in with:
+User: ros2
+Password: ros1ecture
+Synchronizing Time between PC and TurtleBot3
+Switch Connection Mode:
+In Terminal 1, run:
+turtlebots_mode
+Enter the password: ros1ecture (input is hidden).
+Check Synchronization:
+In Terminal 1, run:
+cd ~/ros2_lecture.ws
+./sync_time.sh
+If synchronization fails, repeat the turtlebots_mode step and retry.
+Launching the System
+SSH Connection:
+Open Terminal 2 and connect to the TurtleBot3 via SSH:
+ssh -YC turtle@192.168.11.2
+Enter the password: turtlebot (input is hidden).
+Launch the Robot System:
+In the SSH session (Terminal 2), run:
+ros2 launch ros2_lecture bringup.launch.py
+Note: Keep Terminal 1 running during this process.
+
+Generating a Map using SLAM
+This section explains how to use SLAM to create an environmental map by launching the SLAM system, controlling the robot to explore the environment, and saving the resulting map.
+Launching SLAM
+Ensure Connection and System Launch:
+Confirm that the steps in "Connecting to TurtleBot3" are complete and the system is running in Terminal 2.
+Launch the Virtual Environment:
+Open Terminal 3 and run:
+cd ~/ros2_lecture.ws
+. 0_env.sh
+. /entrypoint.sh
+Launch SLAM:
+In Terminal 3, run:
+. 4a_turtlebot3_settings.sh
+ros2 launch turtlebot3_cartographer cartographer.launch.py
+If successful, an environmental map will begin to appear in Rviz2.
+Controlling the Robot for Mapping
+Launch the Virtual Environment:
+Open Terminal 4 and run:
+cd ~/ros2_lecture.ws
+. 0_env.sh
+. /entrypoint.sh
+Run the Teleop Keyboard Node:
+In Terminal 4, run:
+. 4a_turtlebot3_settings.sh
+ros2 run turtlebot3_teleop teleop_keyboard
+Use the following keys to control the TurtleBot3 slowly and map the environment:
+W: Move forward
+S: Move backward
+A: Turn left
+D: Turn right
+X: Stop
+Saving the Map Data
+Launch the Virtual Environment:
+Open Terminal 5 and run:
+cd ~/ros2_lecture.ws
+. 0_env.sh
+. /entrypoint.sh
+Save the Map:
+In Terminal 5, run:
+. 4a_turtlebot3_settings.sh
+ros2 run nav2_map_server map_saver_cli -f ~/ros2_lecture_ws/map
+This command saves the map as map.pgm and map.yaml in the ~/ros2_lecture_ws directory.
+Shutdown:
+After verifying the map is saved, stop all running terminals (Terminal 1, 2, 3, 4, and 5) by pressing Ctrl+C in each.
+
+Additional Notes
+Environment Consistency: Ensure all terminals are opened in the correct order and remain active as specified to avoid connection issues.
+IP Address: The IP 192.168.11.2 is specific to the lecture setup. Adjust it if your TurtleBot3 uses a different IP.
+Passwords: The credentials (ros1ecture for the PC and turtlebot for SSH) are lecture-specific. Use your own if different.
+SLAM Success: A successful map generation will be visible in Rviz2 as you control the robot. Move slowly to ensure accuracy.
+This guide covers the essential steps to bring up the TurtleBot3 and create a map in ROS2. For further tasks like navigation or exercises, refer to the original lecture document.
