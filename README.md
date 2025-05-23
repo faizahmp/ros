@@ -231,3 +231,36 @@ Use SLAM to create an environmental map by launching the SLAM system, controllin
 
 ---
 
+## Gazebo Simulation
+### Install simulation package
+The TurtleBot3 Simulation Package requires turtlebot3 and turtlebot3_msgs packages. Without these prerequisite packages, the Simulation cannot be launched.
+Please follow the PC Setup instructions if you did not install required packages and dependent packages.
+
+```
+$ cd ~/turtlebot3_ws/src/
+$ git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
+$ cd ~/turtlebot3_ws && colcon build --symlink-install
+```
+
+### Copy The Map
+Copy the map.pgm and map.yml file
+
+### Launch Simulation World
+```
+$ export TURTLEBOT3_MODEL=waffle
+$ ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+```
+
+### Run Slam Node
+```
+$ export TURTLEBOT3_MODEL=burger
+$ ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True
+```
+
+### Run Navigation Node
+```
+$ export TURTLEBOT3_MODEL=burger
+$ ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/map.yaml
+```
+change $HOME/map.yaml, with the name of the map that you want to use.
+
