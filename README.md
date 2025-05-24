@@ -312,7 +312,7 @@ mkdir turtlebot3_drive_py
 nano turtlebot3_drive_py/turtlebot3_drive.py
 ```
 
-Paste the previously converted Python code into this file (as shared in the first answer).
+Paste the previously converted Python code into this file (as shared in the last paragraph of this step).
 
 Save it by pressing `Ctrl + X`, then press `Y`, and then press `Enter`.
 
