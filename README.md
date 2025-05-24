@@ -263,12 +263,8 @@ $ ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True ma
 ```
 change $HOME/map.yaml, with the name of the map that you want to use.
 
-#### patrol
-Here is the full English translation of your instructions and the Python code:
+#### patrol code
 
----
-
-# ros\_amil
 
 For ROS
 🛠 Step 1: Prepare the ROS 2 Workspace
