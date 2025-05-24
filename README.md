@@ -263,3 +263,349 @@ $ ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True ma
 ```
 change $HOME/map.yaml, with the name of the map that you want to use.
 
+#### patrol
+Here is the full English translation of your instructions and the Python code:
+
+---
+
+# ros\_amil
+
+For ROS
+🛠 Step 1: Prepare the ROS 2 Workspace
+
+If you're already inside the `turtlebot3_ws/src` directory, make sure your ROS 2 workspace has been initialized. If not, follow these steps:
+
+### 1.1 Check ROS 2 Workspace
+
+Make sure you're inside the `src` directory of the ROS 2 workspace:
+
+```bash
+cd ~/turtlebot3_ws/src
+```
+
+### 1.2 Create a ROS 2 Python Package
+
+Now, let’s create a new package. This package will use `ament_python` as the build system for Python.
+
+Run this command:
+
+```bash
+ros2 pkg create --build-type ament_python turtlebot3_drive_py
+```
+
+This will create a `turtlebot3_drive_py` folder inside `src` with the basic structure of a ROS 2 Python package.
+
+---
+
+📝 Step 2: Set Up Package Files
+
+After creating the package, we will set up the necessary files inside it.
+
+### 2.1 Enter the Package Folder
+
+```bash
+cd turtlebot3_drive_py
+```
+
+### 2.2 Create the Python File (`turtlebot3_drive.py`)
+
+Create a Python file inside your package directory:
+
+```bash
+mkdir turtlebot3_drive_py
+nano turtlebot3_drive_py/turtlebot3_drive.py
+```
+
+Paste the previously converted Python code into this file (as shared in the first answer).
+
+Save it by pressing `Ctrl + X`, then press `Y`, and then press `Enter`.
+
+### 2.3 Edit `setup.py`
+
+Now open the `setup.py` file:
+
+```bash
+nano setup.py
+```
+
+Make sure it contains the following:
+
+```python
+from setuptools import setup
+
+package_name = 'turtlebot3_drive_py'
+
+setup(
+    name=package_name,
+    version='0.1.0',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+         ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='Your Name',
+    maintainer_email='you@example.com',
+    description='Python version of TurtleBot3 Drive node',
+    license='Apache-2.0',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'turtlebot3_drive = turtlebot3_drive_py.turtlebot3_drive:main'
+        ],
+    },
+)
+```
+
+Save the changes.
+
+### 2.4 Edit `package.xml`
+
+Open `package.xml` to ensure required dependencies are included:
+
+```bash
+nano package.xml
+```
+
+Make sure it contains the following:
+
+```xml
+<?xml version="1.0"?>
+<package format="3">
+  <name>turtlebot3_drive_py</name>
+  <version>0.1.0</version>
+  <description>Python version of TurtleBot3 Drive node</description>
+
+  <maintainer email="you@example.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>tf-transformations</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
+```
+
+Save the changes.
+
+---
+
+🛠 Step 3: Build and Install the Package
+
+### 3.1 Return to Main Workspace Directory
+
+After editing the package files, return to the root of the workspace:
+
+```bash
+cd ~/turtlebot3_ws
+```
+
+### 3.2 Build the Workspace
+
+Build the workspace using `colcon`:
+
+```bash
+colcon build --packages-select turtlebot3_drive_py
+```
+
+### 3.3 Source the Setup File
+
+After the build is finished, source the setup file to activate the new package:
+
+```bash
+source install/setup.bash
+```
+
+---
+
+▶️ Step 4: Run the Python Node
+
+### 4.1 Run the Node
+
+Now you can run the node you just created:
+
+```bash
+ros2 run turtlebot3_drive_py turtlebot3_drive
+```
+
+If everything runs correctly, you will see a message in the terminal indicating that the TurtleBot3 node has been initialized.
+
+---
+
+🔄 Step 5: Optional - Test in Simulation
+
+If you are using the TurtleBot3 simulation with Gazebo, you can test the node by running the simulation and observing the robot's behavior.
+
+Launch the TurtleBot3 simulation in Gazebo (if installed):
+
+```bash
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+```
+
+Then, run the Python node you created and observe the robot’s movement in the simulation.
+
+---
+
+✅ Step 6: Add Dependencies (If Needed)
+
+If you encounter errors or missing dependencies, make sure to install the necessary ROS 2 packages. For example, if `tf-transformations` is missing, you can install it with:
+
+```bash
+sudo apt-get install ros-<ros_distro>-tf-transformations
+```
+
+Replace `<ros_distro>` with your ROS 2 distribution name (e.g., `humble`, `foxy`).
+
+---
+### turtlebot3_drive.py
+```
+#!/usr/bin/env python3
+# Copyright 2019 ROBOTIS CO., LTD.
+
+import math
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from tf_transformations import euler_from_quaternion
+
+DEG2RAD = math.pi / 180.0
+LINEAR_VELOCITY = 0.3
+ANGULAR_VELOCITY = 1.5
+
+GET_TB3_DIRECTION = 0
+TB3_DRIVE_FORWARD = 1
+TB3_RIGHT_TURN = 2
+TB3_LEFT_TURN = 3
+
+CENTER = 0
+LEFT = 1
+RIGHT = 2
+
+
+class Turtlebot3Drive(Node):
+    def __init__(self):
+        super().__init__('turtlebot3_drive_node')
+
+        # Init Var
+        self.scan_data = [0.0, 0.0, 0.0]
+        self.robot_pose = 0.0
+        self.prev_robot_pose = 0.0
+        self.turtlebot3_state_num = 0
+
+        # QoS
+        qos = rclpy.qos.QoSProfile(depth=10)
+
+        # Publisher
+        self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel', qos)
+
+        # Subscribers
+        self.scan_sub = self.create_subscription(
+            LaserScan, 'scan', self.scan_callback,
+            rclpy.qos.qos_profile_sensor_data)
+
+        self.odom_sub = self.create_subscription(
+            Odometry, 'odom', self.odom_callback, qos)
+
+        # Timer
+        self.update_timer = self.create_timer(0.01, self.update_callback)
+
+        self.get_logger().info('Turtlebot3 simulation node has been initialised')
+
+    def __del__(self):
+        self.get_logger().info('Turtlebot3 simulation node has been terminated')
+
+    def odom_callback(self, msg):
+        orientation_q = msg.pose.pose.orientation
+        orientation_list = [
+            orientation_q.x,
+            orientation_q.y,
+            orientation_q.z,
+            orientation_q.w]
+        (_, _, yaw) = euler_from_quaternion(orientation_list)
+        self.robot_pose = yaw
+
+    def scan_callback(self, msg):
+        scan_angle = [0, 30, 330]
+
+        for i in range(3):
+            angle = scan_angle[i]
+            if math.isinf(msg.ranges[angle]):
+                self.scan_data[i] = msg.range_max
+            else:
+                self.scan_data[i] = msg.ranges[angle]
+
+    def update_cmd_vel(self, linear, angular):
+        cmd = Twist()
+        cmd.linear.x = linear
+        cmd.angular.z = angular
+        self.cmd_vel_pub.publish(cmd)
+
+    def update_callback(self):
+        escape_range = 30.0 * DEG2RAD
+        check_forward_dist = 0.7
+        check_side_dist = 0.6
+
+        if self.turtlebot3_state_num == GET_TB3_DIRECTION:
+            if self.scan_data[CENTER] > check_forward_dist:
+                if self.scan_data[LEFT] < check_side_dist:
+                    self.prev_robot_pose = self.robot_pose
+                    self.turtlebot3_state_num = TB3_RIGHT_TURN
+                elif self.scan_data[RIGHT] < check_side_dist:
+                    self.prev_robot_pose = self.robot_pose
+                    self.turtlebot3_state_num = TB3_LEFT_TURN
+                else:
+                    self.turtlebot3_state_num = TB3_DRIVE_FORWARD
+
+            elif self.scan_data[CENTER] < check_forward_dist:
+                self.prev_robot_pose = self.robot_pose
+                self.turtlebot3_state_num = TB3_RIGHT_TURN
+
+        elif self.turtlebot3_state_num == TB3_DRIVE_FORWARD:
+            self.update_cmd_vel(LINEAR_VELOCITY, 0.0)
+            self.turtlebot3_state_num = GET_TB3_DIRECTION
+
+        elif self.turtlebot3_state_num == TB3_RIGHT_TURN:
+            if abs(self.prev_robot_pose - self.robot_pose) >= escape_range:
+                self.turtlebot3_state_num = GET_TB3_DIRECTION
+            else:
+                self.update_cmd_vel(0.0, -ANGULAR_VELOCITY)
+
+        elif self.turtlebot3_state_num == TB3_LEFT_TURN:
+            if abs(self.prev_robot_pose - self.robot_pose) >= escape_range:
+                self.turtlebot3_state_num = GET_TB3_DIRECTION
+            else:
+                self.update_cmd_vel(0.0, ANGULAR_VELOCITY)
+
+        else:
+            self.turtlebot3_state_num = GET_TB3_DIRECTION
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = Turtlebot3Drive()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
