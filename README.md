@@ -605,3 +605,294 @@ def main(args=None):
 if __name__ == '__main__':
     main()
 ```
+# Auto detect
+## System Prepare
+### Camera Test
+```
+sudo apt install fswebcam
+fswebcam test.jpg
+```
+### Install Pckage
+```
+pip install opencv-python ultralytics openai requests pydrive python-dotenv
+```
+
+## Detect and Capture
+### detect_and_capture.py
+```
+from ultralytics import YOLO
+import cv2
+import uuid
+
+model = YOLO("yolov8n.pt")
+
+def detect_and_capture(filename="detected.jpg"):
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+    if not ret:
+        return False
+
+    results = model(frame)
+    labels = results[0].names
+    for box in results[0].boxes:
+        label = labels[int(box.cls[0])]
+        if label not in ['wall', 'floor', 'robot']:
+            cv2.imwrite(filename, frame)
+            return True
+    return False
+```
+### classify_with_llm.py
+```
+import openai
+import os
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def classify_object(image_path):
+    prompt = f"Aku mendeteksi objek pada gambar ini: {image_path}. Menurutmu benda apa ini?"
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message["content"]
+```
+### upload_to_drive.py
+```
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+
+def upload_to_drive(file_path):
+    gauth = GoogleAuth()
+    gauth.LocalWebserverAuth()  # akan buka browser
+    drive = GoogleDrive(gauth)
+    file = drive.CreateFile({'title': file_path})
+    file.SetContentFile(file_path)
+    file.Upload()
+```
+### send telegram
+```
+import requests
+
+TELEGRAM_TOKEN = "YOUR_BOT_TOKEN"
+CHAT_ID = "YOUR_CHAT_ID"
+
+def send_telegram_message(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, data={"chat_id": CHAT_ID, "text": text})
+
+def send_telegram_photo(photo_path, caption=""):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+    with open(photo_path, "rb") as photo:
+        requests.post(url, files={"photo": photo}, data={"chat_id": CHAT_ID, "caption": caption})
+```
+### main.py
+```
+from detect_and_capture import detect_and_capture
+from classify_with_llm import classify_object
+from upload_to_drive import upload_to_drive
+from send_telegram import send_telegram_message, send_telegram_photo
+
+filename = "detected.jpg"
+
+if detect_and_capture(filename):
+    send_telegram_photo(filename, "📸 Objek asing ditemukan!")
+    
+    desc = classify_object(filename)
+    send_telegram_message(f"🤖 Klasifikasi objek:\n{desc}")
+    
+    upload_to_drive(filename)
+    send_telegram_message("☁️ Foto berhasil diunggah ke Google Drive.")
+else:
+    print("Tidak ada objek asing ditemukan.")
+```
+### Folder structure
+```
+turtlebot_patrol/
+├── README.md                      ← Project description and usage instructions
+├── requirements.txt               ← Python dependencies
+├── .env                           ← Stores API keys (do NOT upload to GitHub)
+├── main.py                        ← Main script that runs the full pipeline
+├── yolov8n.pt                     ← YOLO model file (downloaded from Ultralytics)
+├── detect_and_capture.py          ← Detects foreign objects using the camera
+├── classify_with_llm.py           ← Classifies detected object using LLM (GPT)
+├── upload_to_drive.py             ← Uploads image to Google Drive
+├── send_telegram.py               ← Sends Telegram notifications
+├── captured/                      ← Folder to store captured object images
+│   └── detected_abc123.jpg
+└── ros2_ws/                       ← ROS2 workspace (optional, for full ROS integration)
+    ├── src/
+    │   └── turtlebot_patrol_pkg/
+    │       ├── package.xml            ← ROS2 package definition
+    │       ├── setup.py               ← Python package setup for ROS2
+    │       ├── resource/              ← ROS2 required resource folder
+    │       ├── turtlebot_patrol_pkg/  ← Python module folder
+    │       │   ├── __init__.py
+    │       │   ├── patrol_node.py     ← ROS2 node for patrol and navigation
+    │       │   ├── detector_node.py   ← ROS2 node for object detection
+    │       │   └── ...
+    └── install/ ...
+```
+### patrol_node.py
+```
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import PoseStamped
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+import time
+
+class PatrolNode(Node):
+    def __init__(self):
+        super().__init__('patrol_node')
+        self.navigator = BasicNavigator()
+
+        self.waypoints = [
+            self.create_pose(0.0, 0.0, 0.0, 1.0),
+            self.create_pose(1.0, 0.0, 0.0, 1.0),
+            self.create_pose(1.0, 1.0, 0.707, 0.707)
+        ]
+
+        self.timer = self.create_timer(2.0, self.start_patrol)
+        self.patrol_started = False
+
+    def create_pose(self, x, y, z, w):
+        pose = PoseStamped()
+        pose.header.frame_id = 'map'
+        pose.header.stamp = self.get_clock().now().to_msg()
+        pose.pose.position.x = x
+        pose.pose.position.y = y
+        pose.pose.orientation.z = z
+        pose.pose.orientation.w = w
+        return pose
+
+    def start_patrol(self):
+        if self.patrol_started:
+            return
+        self.patrol_started = True
+        self.navigator.waitUntilNav2Active()
+
+        self.get_logger().info("🚶 Starting patrol...")
+
+        for i, waypoint in enumerate(self.waypoints):
+            self.get_logger().info(f"🔁 Navigating to waypoint {i+1}")
+            self.navigator.goToPose(waypoint)
+
+            while not self.navigator.isTaskComplete():
+                time.sleep(1)
+
+            result = self.navigator.getResult()
+            if result == TaskResult.SUCCEEDED:
+                self.get_logger().info(f"✅ Reached waypoint {i+1}")
+                time.sleep(10)  # Wait before going to next waypoint
+            else:
+                self.get_logger().warn(f"⚠️ Failed to reach waypoint {i+1}")
+
+        self.get_logger().info("🏁 Patrol complete.")
+        self.patrol_started = False  # Repeat if needed
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = PatrolNode()
+    rclpy.spin(node)
+    rclpy.shutdown()
+```
+### detector_node.py
+```
+import rclpy
+from rclpy.node import Node
+import cv2
+from ultralytics import YOLO
+from datetime import datetime
+import os
+from dotenv import load_dotenv
+import requests
+import openai
+
+class DetectorNode(Node):
+    def __init__(self):
+        super().__init__('detector_node')
+        load_dotenv()
+
+        self.model = YOLO('yolov8n.pt')  # Path relatif jika dijalankan dari root proyek
+        self.cap = cv2.VideoCapture(0)  # Ganti jika bukan /dev/video0
+        self.timer = self.create_timer(10.0, self.detect_object)
+
+        self.save_dir = os.path.abspath('captured')
+        os.makedirs(self.save_dir, exist_ok=True)
+
+        # LLM & Telegram config
+        self.telegram_token = os.getenv("TELEGRAM_TOKEN")
+        self.chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+
+    def detect_object(self):
+        ret, frame = self.cap.read()
+        if not ret:
+            self.get_logger().warn("Camera not found!")
+            return
+
+        results = self.model(frame)
+        names = results[0].names
+
+        for box in results[0].boxes:
+            class_id = int(box.cls[0])
+            label = names[class_id]
+
+            if label not in ['floor', 'wall', 'robot']:
+                filename = f"detected_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                filepath = os.path.join(self.save_dir, filename)
+                cv2.imwrite(filepath, frame)
+                self.get_logger().info(f"🔍 Detected: {label}, saved {filename}")
+
+                # Klasifikasi + notifikasi
+                label_llm = self.classify_image(filepath)
+                self.send_telegram(filepath, label_llm)
+                break  # Simpan sekali per siklus
+
+    def classify_image(self, image_path):
+        prompt = (
+            "This is an image from a patrol robot. "
+            "Please classify the object in the image in a short description."
+        )
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4-vision-preview",
+                messages=[
+                    {"role": "user", "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data.encode('base64')}"
+                        }}
+                    ]}
+                ],
+                max_tokens=50
+            )
+            desc = response['choices'][0]['message']['content']
+            return desc
+        except Exception as e:
+            self.get_logger().error(f"LLM error: {e}")
+            return "Unknown object"
+
+    def send_telegram(self, image_path, label):
+        url = f"https://api.telegram.org/bot{self.telegram_token}/sendPhoto"
+        with open(image_path, 'rb') as img:
+            files = {'photo': img}
+            data = {'chat_id': self.chat_id, 'caption': f"🚨 Detected object: {label}"}
+            try:
+                r = requests.post(url, files=files, data=data)
+                if r.status_code == 200:
+                    self.get_logger().info("📤 Telegram alert sent!")
+                else:
+                    self.get_logger().warn(f"Telegram error: {r.status_code}")
+            except Exception as e:
+                self.get_logger().error(f"Telegram exception: {e}")
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = DetectorNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+```
+
